@@ -17,29 +17,44 @@ class Perceptron:
     
     def fit (self, X, T):
 
+        erro = np.zeros(self.numberOfTimes)
+        
         fig = plt.figure()
         plt.scatter(X[:,1], X[:,2],marker = 'o', c = T)
-            
+
         for i in range(self.numberOfTimes):
 
-            print(i, 'época')
             O = self.predict(X)
-            print(O)
 
             for k, x_k in enumerate(X):
 
                 # w_ij = w_ij + lambda * x_ki * (t_kj - o_kj)
                 self.W += self.learningRate * (T[k] - O[k]) * x_k
-                print (k, x_k, self.W)
+            
+            if (i == self.numberOfTimes - 1):
+                linecolor = 'black'
+            else:
+                linecolor = 'red'
 
             x_plot = np.linspace(-0.5, 1.5, 50)
-            print(x_plot)
-            line = (self.W[0] - (self.W[1] * x_plot))/self.W[2]
-            print('LINE', line)
-            plt.plot(line, x_plot)
-            plt.show()
-                
-            
+            plt.plot(x_plot, (self.W[0] - (self.W[1] * x_plot))/self.W[2], '--', color=linecolor)
+
+            # calcula o erro por epoca
+            for j in range(0, len(O)):
+
+                if(O[j] != T[j]):
+
+                    erro[i] += 1
+        
+        print('Saída do Perceptron = ', O)
+        plt.savefig("outPerceptron.png")
+        plt.show()
+
+        fig = plt.figure()
+        plt.plot(np.arange(self.numberOfTimes), erro)
+        plt.savefig("erroPerceptron.png")
+        plt.show()
+             
     # f(XW - b)
     def predict (self, X):
 
@@ -65,7 +80,6 @@ def main():
     if (flag == 's'):
         
         weights = np.random.normal(0,0.5,3)
-        print(weights)
 
     elif (flag == 'n'):
         
@@ -75,8 +89,6 @@ def main():
             
             weights[i] = float(input('Insira o {}° elemento: '.format(i+1)))
         
-        print(weights)
-
     else:
         print('Entrada inválida!!')
         exit(0)    
