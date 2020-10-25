@@ -14,7 +14,10 @@ class Perceptron:
         self.numberOfTimes = numberOfTimes # numero de epocas
         self.W = weights # pesos sinapticos
         self.activationFunc = self.unitStep # funcao de ativacao
-    
+
+    def testPcn (self, X):
+        return self.predict(X)
+
     def trainPcn (self, X, T, tipeOfTrain):
         
         # treinamento de batch
@@ -25,8 +28,6 @@ class Perceptron:
                 O = self.predict(X)
                 self.W += self.learningRate * np.dot(X.T, (T - O)) 
             
-            print(O)
-
         # treinamento sequencial
         else:
 
@@ -37,9 +38,9 @@ class Perceptron:
                     O = self.predict(X)
 
                     # w_ij = w_ij + lambda * x_ki * (t_kj - o_kj)
-                    self.W += self.learningRate * (T[k] - O[k]) * x_k
+                    self.W += self.learningRate * np.dot(x_k[np.newaxis].T, (T[k,:] - O[k,:])[np.newaxis])
             
-            print(O)
+        print('erro', T - O)
              
     # f(XW - b)
     def predict (self, X):
@@ -59,6 +60,7 @@ def main():
     learningRate = float(input('Insira a taxa de aprendizagem:'))
     numberOfTimes = int(input('Insira o número de épocas:'))
     N = int(input('Insira o número de padrões por classe:'))
+    percentTrain = float(input('Insira a porcentagem de dados que serão utililizados no treinamento:'))
     tipeOfTrain = int(input('Insira [0] para treinamento de lote e [1] treinamento sequencial:'))
     
     if (tipeOfTrain != 0 and tipeOfTrain != 1):
@@ -73,23 +75,37 @@ def main():
         # desvio padrao de cada gaussiana
         sd = float(input('Insira o valor do desvio padrão da {}° gaussiana: '.format(i+1)))
         
-        # padroes de treinamento
+        # padroes
         if (i == 0):
             X = np.random.normal(average, sd, (N, 2))
         else:
             X = np.concatenate((np.random.normal(average, sd, (N, 2)), X), axis=0)
-
-    # adiciona o bias aos padroes de treinamento
+    
+    # adiciona o bias aos padroes
     X = np.concatenate((np.full((3*N, 1), -1.0), X), axis=1)
 
     print(X)
+
+    # cria os conjuntos de treinamento e de teste
+    rand_state = np.random.RandomState(0)
+    rand_state.shuffle(X)
+    idx = int(percentTrain*N*3)
+    trainSet = X[0:idx, :]
+    testSet = X[idx+1:len(X), :]
+
+    print('train', trainSet)
+    print('test', testSet)
 
     # alvos
     T = np.zeros((N,2))
     T = np.concatenate((T, np.concatenate((np.zeros((N,1)), np.ones((N,1))), axis=1)), axis=0)
     T = np.concatenate((T, np.concatenate((np.ones((N,1)), np.ones((N,1))), axis=1)), axis=0)
+    
+    rand_state.seed(0)
+    rand_state.shuffle(T)
+    tTrain = T[0:idx, :]
+    tTest = T[idx+1:len(X), :]
 
-    print(T)
 
     # pesos sinapticos
     weights = np.random.normal(0, 0.01, (3, 2))
@@ -100,10 +116,10 @@ def main():
 
     # plota os padroes de entrada por classe (conjunto de teste)
     fig = plt.figure()
-    plt.scatter(X[:,1], X[:,2],marker = 'o', c = (T[:,0] + T[:,1]))
+    plt.scatter(trainSet[:,1], trainSet[:,2],marker = 'o', c = (tTrain[:,0] + tTrain[:,1]))
 
     # treina o perceptron
-    p.trainPcn(X, T, tipeOfTrain)
+    p.trainPcn(trainSet, tTrain, tipeOfTrain)
 
     # plota as fronteiras entre as classes
     colors = ['red', 'black']
@@ -112,6 +128,10 @@ def main():
         plt.plot(x_plot, (p.W[0][j] - (p.W[1][j] * x_plot))/p.W[2][j], '--', color=colors[j])
     
     plt.show()
+
+    # avalia o classificador utilizando o conjunto de teste
+
+    O = p.testPcn(testSet)
 
 if __name__ == '__main__':
     main()
